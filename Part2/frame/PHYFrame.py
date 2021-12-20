@@ -34,14 +34,13 @@ class PhyFrame:
     def from_array(self, frame_array):
         """setting from the detected array, preamble is excluded"""
         self.phy_load = MACFrame()
-        self.set_type(frame_array[:4])
         self.phy_load.load = UDPFrame()
-        self.num = frame_array[4:12]
+        self.num = frame_array[:8]
         # self.phy_load.load.set_src_ip(frame_array[4:4 + ip_bit_length])
         # self.phy_load.load.set_dest_ip(frame_array[4 + ip_bit_length:4 + 2 * ip_bit_length])
         # self.phy_load.load.set_src_port(frame_array[4 + 2 * ip_bit_length:4 + 2 * ip_bit_length + 16])
         # self.phy_load.load.set_dest_port(frame_array[4 + 2 * ip_bit_length + 16:4 + 2 * ip_bit_length + 32])
-        self.phy_load.load.set_load(frame_array[12:12 + 8*bytes_per_frame])
+        self.phy_load.load.set_load(frame_array[8:8 + 8*bytes_per_frame])
         self.CRC = frame_array[-8:]
 
     def get_modulated_frame(self):
