@@ -66,13 +66,15 @@ def gen_data(str_send, src_address, dest_address):
     frame.set_src_port(translate_port_to_bits(src_address[1]))
     frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
     frame.set_dest_port(translate_port_to_bits(dest_address[1]))
-    frame.set_num(len(str_send))
+    frame.set_num(len(str_send)*8)
     byte_bit_str_buffer = ""
     for j in range(bytes_per_frame):
         if j < len(str_send):
             byte_bit_str_buffer += '{0:08b}'.format(ord(str_send[j]), 'b')
         else:
             byte_bit_str_buffer += "00000000"
+    # byte_bit_str_buffer = "0b" + byte_bit_str_buffer
+    print(bit_load_to_str(byte_bit_str_buffer))
     frame.set_load(byte_bit_str_buffer)
     frame.set_CRC()
     return frame
@@ -207,7 +209,7 @@ if __name__ == "__main__":
 
         if commands[0] == "USER":
             send_data("USER")
-            time.sleep(2)
+
             print(receive_data())
 
         elif commands[0] == "PASS":

@@ -177,6 +177,13 @@ def decode_port(port_bits):
     return int(port_bits, 2)
 
 
+def bit_load_to_str(bit_str):
+    res = ''
+    for i in range(int(len(bit_str) / 8)):
+        res += chr(int(bit_str[i * 8:(i + 1) * 8], 2))
+    return res
+
+
 sample_rate = 48000
 signal0 = [0.5, 0.5, 0.5, -0.5, -0.5, -0.5]
 signal1 = [-0.5, -0.5, -0.5, 0.5, 0.5, 0.5]
