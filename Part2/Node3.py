@@ -73,8 +73,6 @@ def gen_data(str_send, src_address, dest_address):
             byte_bit_str_buffer += '{0:08b}'.format(ord(str_send[j]), 'b')
         else:
             byte_bit_str_buffer += "00000000"
-    # byte_bit_str_buffer = "0b" + byte_bit_str_buffer
-    print(bit_load_to_str(byte_bit_str_buffer))
     frame.set_load(byte_bit_str_buffer)
     frame.set_CRC()
     return frame
@@ -184,18 +182,17 @@ def receive_data():
                 time.sleep(0.1)
             frame_detected = global_buffer[pointer: pointer + frame_length - preamble_length]
             frame_in_bits = decode_to_bits(frame_detected)
-            if check_CRC8(frame_in_bits):
-                # CRC correct, starting decode ip and port
-                phy_frame = PhyFrame()
-                phy_frame.from_array(frame_in_bits)
-                pay_len = phy_frame.get_decimal_num()
-                print("payload_length:", pay_len)
-                byte_str = str(phy_frame.get_load())[2:2 + pay_len]
-            else:
-                print("CRC broken!")
+            # CRC correct, starting decode ip and port
+            phy_frame = PhyFrame()
+            phy_frame.from_array(frame_in_bits)
+            pay_len = phy_frame.get_decimal_num()
+            print("payload_length:", pay_len)
+            byte_str = str(phy_frame.get_load())[0:pay_len]
             pointer += frame_length - preamble_length
             break
         pointer += block_size
+    global_pointer = pointer
+    byte_str = bit_load_to_str(byte_str)
     print("receiving data finished... showing contents...", byte_str)
     return byte_str
 
