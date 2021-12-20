@@ -7,7 +7,7 @@ import numpy as np
 from Part2.all_globals import *
 from Part2.config.Type import *
 from Part2.config.ACKConfig import *
-
+import ftplib
 
 def set_stream():
     asio_id = 10
@@ -72,7 +72,6 @@ def gen_data(str_send, src_address, dest_address):
             byte_bit_str_buffer += '{0:08b}'.format(ord(str_send[j]), 'b')
         else:
             byte_bit_str_buffer += "00000000"
-    # byte_bit_str_buffer = "0b" + byte_bit_str_buffer
     print(bit_load_to_str(byte_bit_str_buffer))
     frame.set_load(byte_bit_str_buffer)
     frame.set_CRC()
@@ -134,7 +133,36 @@ def send_data(str_send):
 
 stream = set_stream()
 stream.start()
+host = "ftp.sjtu.edu.cn"
+port = 21
+username = ""
+password = ""
+ftp = None
 while True:
     input("enter to receive")
-    re = receive_data()
-    send_data(re)
+    command = receive_data().split(" ")
+
+    if len(command[0]) == 0:
+        continue
+
+    elif command[0] == "USER":
+        if len(command[1]) > 0:
+            username = command[1]
+            send_data("username: " + username)
+        else:
+            username = ""
+            send_data("username is empty")
+
+    elif command[0] == "PASS":
+        if len(command[1]) > 0:
+            password = command[1]
+            send_data("password: " + password)
+        else:
+            password = ""
+            send_data("password is empty")
+
+    elif command[0] == "CONNECT":
+        ftp = ftplib.FTP(host, username, password)
+        break
+
+stream.stop()

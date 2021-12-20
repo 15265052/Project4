@@ -205,16 +205,16 @@ if __name__ == "__main__":
         commands = [x for x in str_in.split(' ')]
 
         if commands[0] == "USER":
-            send_data("USER")
+            send_data("USER ")
 
             print(receive_data())
 
         elif commands[0] == "PASS":
-            send_data("PASS")
+            send_data("PASS ")
             print(receive_data())
 
         elif commands[0] == "PWD":
-            send_data("PWD")
+            send_data("PWD ")
             print(receive_data())
 
         else:
