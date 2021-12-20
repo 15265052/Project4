@@ -163,6 +163,7 @@ while True:
 
     elif command[0] == "CONNECT":
         ftp = ftplib.FTP(host, username, password)
+        ftp.login()
         break
 
 while True:
