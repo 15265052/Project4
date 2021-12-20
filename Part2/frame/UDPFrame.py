@@ -34,7 +34,7 @@ class UDPFrame:
         self.load = None
 
     def get(self):
-        return self.src_ip + self.dest_ip + self.src_port + self.dest_port + self.load
+        return self.load
 
     def set_src_ip(self, src_ip):
         self.src_ip = src_ip
@@ -67,6 +67,4 @@ class UDPFrame:
         return self.load
 
     def modulate(self):
-        return np.concatenate(
-            [modulate_string(self.src_ip), modulate_string(self.dest_ip), modulate_string(self.src_port),
-             modulate_string(self.dest_port), modulate_string(self.load)])
+        return modulate_string(self.load)
