@@ -9,7 +9,7 @@ from Part2.config.ACKConfig import *
 
 
 def set_stream():
-    asio_id = 12
+    asio_id = 10
     asio_in = sd.AsioSettings(channel_selectors=[0])
     asio_out = sd.AsioSettings(channel_selectors=[1])
 
@@ -59,7 +59,7 @@ def gen_data(pre_data, src_address, dest_address):
     """translate payload into Athernet packet"""
     athernet_frames = []
     for i in range(frame_num):
-        data = pre_data[0][i*bytes_per_frame:(i+1)*bytes_per_frame]
+        data = pre_data[0][i * bytes_per_frame:(i + 1) * bytes_per_frame]
         frame = PhyFrame()
         frame.set_phy_load(MACFrame())
         frame.set_MAC_load(UDPFrame())
@@ -259,5 +259,51 @@ def internet_to_athernet():
     print("sending data to node3 finished")
 
 
-internet_to_athernet()
-# athernet_to_internet()
+def receive_data():
+    global TxFrame
+    global global_buffer
+    global global_pointer
+    global detected_frames
+    pointer = global_pointer
+    byte_str = ""
+    while True:
+        if pointer + block_size > len(global_buffer):
+            continue
+        block_buffer = global_buffer[pointer: pointer + block_size]
+        pointer_frame = detect_preamble(block_buffer)
+        if not pointer_frame == "error":
+            pointer += pointer_frame
+            # detect a frame, first to check its correctness
+            if pointer + frame_length - preamble_length > len(global_buffer):
+                time.sleep(0.1)
+            frame_detected = global_buffer[pointer: pointer + frame_length - preamble_length]
+            frame_in_bits = decode_to_bits(frame_detected)
+            if check_CRC8(frame_in_bits):
+                # CRC correct, starting decode ip and port
+                phy_frame = PhyFrame()
+                phy_frame.from_array(frame_in_bits)
+                pay_len = phy_frame.get_decimal_num()
+                print("payload_length:", pay_len)
+                byte_str = str(phy_frame.get_load())[2:2 + pay_len]
+            else:
+                print("CRC broken!")
+            pointer += frame_length - preamble_length
+            break
+        pointer += block_size
+    print("receiving data finished... showing contents...", byte_str)
+    return byte_str
+
+
+def send_data(str_send):
+    global TxFrame
+    frame = gen_data(str_send, (node3_ip, node3_port), (NAT_athernet_ip, NAT_port))
+    TxFrame = frame.get_modulated_frame()[:]
+    send_athernet_data()
+    TxFrame = []
+    print("Node3 sending data finished")
+
+
+while True:
+    input("enter to receive")
+    receive_data()
+    send_data("received")

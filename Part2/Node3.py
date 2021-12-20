@@ -11,7 +11,7 @@ from Part2.config.ACKConfig import *
 
 
 def set_stream():
-    asio_id = 10
+    asio_id = 14
     asio_in = sd.AsioSettings(channel_selectors=[0])
     asio_out = sd.AsioSettings(channel_selectors=[1])
 
@@ -148,13 +148,10 @@ def check_ACK(range1, range2, data):
 
 def send_data(str_send):
     global TxFrame
-    stream = set_stream()
-    stream.start()
     frame = gen_data(str_send, (node3_ip, node3_port), (NAT_athernet_ip, NAT_port))
     TxFrame = frame.get_modulated_frame()[:]
     send_athernet_data()
     TxFrame = []
-    stream.stop()
     print("Node3 sending data finished")
 
 
@@ -168,8 +165,6 @@ def send_ACK(n_frame):
 
 def receive_data():
     global TxFrame
-    stream = set_stream()
-    stream.start()
     global global_buffer
     global global_pointer
     global detected_frames
@@ -199,24 +194,30 @@ def receive_data():
             pointer += frame_length - preamble_length
             break
         pointer += block_size
-    stream.stop()
     print("receiving data finished... showing contents...", byte_str)
     return byte_str
 
 
 if __name__ == "__main__":
+    stream = set_stream()
+    stream.start()
     while True:
         str_in = input("Please input commands ")
         commands = [x for x in str_in.split(' ')]
 
         if commands[0] == "USER":
             send_data("USER")
+            time.sleep(2)
             print(receive_data())
 
-        if commands[0] == "PASS":
+        elif commands[0] == "PASS":
             send_data("PASS")
             print(receive_data())
 
-        if commands[0] == "PWD":
+        elif commands[0] == "PWD":
             send_data("PWD")
             print(receive_data())
+
+        else:
+            break
+    stream.stop()
