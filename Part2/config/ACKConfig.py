@@ -19,7 +19,6 @@ def single_ACK(num):
 
 
 ACK_buffer = []
-ACK_predefined = predefine_ACK()
 ACK_send_buffer = []
 buffer_size = 1
 preamble_detected = 0

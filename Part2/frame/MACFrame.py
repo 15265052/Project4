@@ -53,4 +53,4 @@ class MACFrame:
 
     def modulate(self):
         """modulate the whole frame into signals"""
-        return np.concatenate(self.load.modulate())
+        return self.load.modulate()

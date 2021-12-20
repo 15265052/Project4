@@ -7,7 +7,8 @@ with ftplib.FTP('ftp.sjtu.edu.cn') as ftp:
         ftp.login()
 
         files = []
+        ftp.dir(files.append)
+        print()
 
-        print(ftp.dir())
     except ftplib.all_errors as e:
         print('FTP error:', e)

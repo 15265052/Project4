@@ -9,6 +9,7 @@ from Part2.config.Type import *
 from Part2.config.ACKConfig import *
 import ftplib
 
+
 def set_stream():
     asio_id = 10
     asio_in = sd.AsioSettings(channel_selectors=[0])
@@ -65,7 +66,7 @@ def gen_data(str_send, src_address, dest_address):
     frame.set_src_port(translate_port_to_bits(src_address[1]))
     frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
     frame.set_dest_port(translate_port_to_bits(dest_address[1]))
-    frame.set_num(len(str_send)*8)
+    frame.set_num(len(str_send) * 8)
     byte_bit_str_buffer = ""
     for j in range(bytes_per_frame):
         if j < len(str_send):
@@ -110,11 +111,12 @@ def receive_data():
             # CRC correct, starting decode ip and port
             phy_frame = PhyFrame()
             phy_frame.from_array(frame_in_bits)
-            pay_len = phy_frame.get_decimal_num()
-            print("payload_length:", pay_len)
-            byte_str = str(phy_frame.get_load())[0:pay_len]
-            pointer += frame_length - preamble_length
-            break
+            if phy_frame.check():
+                pay_len = phy_frame.get_decimal_num()
+                print("payload_length:", pay_len)
+                byte_str = str(phy_frame.get_load())[0:pay_len]
+                pointer += frame_length - preamble_length
+                break
         pointer += block_size
     global_pointer = pointer
     byte_str = bit_load_to_str(byte_str)
@@ -130,6 +132,7 @@ def send_data(str_send):
     send_athernet_data()
     TxFrame = []
     print("Node3 sending data finished")
+
 
 stream = set_stream()
 stream.start()
@@ -177,4 +180,17 @@ while True:
         send_data(ftp.pwd())
         continue
 
+    elif command[0] == "LIST":
+        files = []
+        ftp.dir(files.append)
+        str_send = ' '.join(files)
+        i = 0
+        while i < len(str_send):
+            if (i + bytes_per_frame) > len(str_send):
+                send_data(str_send[i: len(str_send)])
+            else:
+                send_data(str_send[i: i + bytes_per_frame])
+            i += bytes_per_frame
+        send_data("end list")
+        continue
 stream.stop()

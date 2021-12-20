@@ -67,7 +67,7 @@ def gen_data(str_send, src_address, dest_address):
     # frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
     # frame.set_dest_port(translate_port_to_bits(dest_address[1]))
     print(len(str_send) * 8)
-    frame.set_num(len(str_send)*8)
+    frame.set_num(len(str_send) * 8)
 
     byte_bit_str_buffer = ""
     for j in range(bytes_per_frame):
@@ -187,11 +187,12 @@ def receive_data():
             # CRC correct, starting decode ip and port
             phy_frame = PhyFrame()
             phy_frame.from_array(frame_in_bits)
-            pay_len = phy_frame.get_decimal_num()
-            print("payload_length:", pay_len)
-            byte_str = str(phy_frame.get_load())[0:pay_len]
-            pointer += frame_length - preamble_length
-            break
+            if phy_frame.check():
+                pay_len = phy_frame.get_decimal_num()
+                print("payload_length:", pay_len)
+                byte_str = str(phy_frame.get_load())[0:pay_len]
+                pointer += frame_length - preamble_length
+                break
         pointer += block_size
     global_pointer = pointer
     byte_str = bit_load_to_str(byte_str)
@@ -208,7 +209,6 @@ if __name__ == "__main__":
 
         if commands[0] == "USER":
             send_data("USER ")
-
             print(receive_data())
 
         elif commands[0] == "PASS":
@@ -221,6 +221,14 @@ if __name__ == "__main__":
 
         elif commands[0] == "CONNECT":
             send_data("CONNECT ")
+
+        elif commands[0] == "LIST":
+            send_data("LIST ")
+            ret = receive_data()
+            while ret != "end list" or len(ret) == 0:
+                print(ret)
+                ret = receive_data()
+            continue
         else:
             break
     stream.stop()
