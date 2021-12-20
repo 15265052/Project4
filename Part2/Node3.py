@@ -62,11 +62,13 @@ def gen_data(str_send, src_address, dest_address):
     frame.set_phy_load(MACFrame())
     frame.set_MAC_load(UDPFrame())
     frame.set_type(data_frame)
-    frame.set_src_ip(translate_ip_to_bits(src_address[0]))
-    frame.set_src_port(translate_port_to_bits(src_address[1]))
-    frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
-    frame.set_dest_port(translate_port_to_bits(dest_address[1]))
+    # frame.set_src_ip(translate_ip_to_bits(src_address[0]))
+    # frame.set_src_port(translate_port_to_bits(src_address[1]))
+    # frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
+    # frame.set_dest_port(translate_port_to_bits(dest_address[1]))
+    print(len(str_send) * 8)
     frame.set_num(len(str_send)*8)
+
     byte_bit_str_buffer = ""
     for j in range(bytes_per_frame):
         if j < len(str_send):

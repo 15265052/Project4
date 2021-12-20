@@ -40,11 +40,11 @@ class PhyFrame:
             self.CRC = frame_array[-8:]
             return
         self.phy_load.load = UDPFrame()
-        self.phy_load.load.set_src_ip(frame_array[4:4 + ip_bit_length])
-        self.phy_load.load.set_dest_ip(frame_array[4 + ip_bit_length:4 + 2 * ip_bit_length])
-        self.phy_load.load.set_src_port(frame_array[4 + 2 * ip_bit_length:4 + 2 * ip_bit_length + 16])
-        self.phy_load.load.set_dest_port(frame_array[4 + 2 * ip_bit_length + 16:4 + 2 * ip_bit_length + 32])
-        self.phy_load.load.set_load(frame_array[4 + 2 * ip_bit_length + 32:4 + 2 * ip_bit_length + 32 + 80])
+        # self.phy_load.load.set_src_ip(frame_array[4:4 + ip_bit_length])
+        # self.phy_load.load.set_dest_ip(frame_array[4 + ip_bit_length:4 + 2 * ip_bit_length])
+        # self.phy_load.load.set_src_port(frame_array[4 + 2 * ip_bit_length:4 + 2 * ip_bit_length + 16])
+        # self.phy_load.load.set_dest_port(frame_array[4 + 2 * ip_bit_length + 16:4 + 2 * ip_bit_length + 32])
+        self.phy_load.load.set_load(frame_array[4:4 + 8*bytes_per_frame])
         self.num = frame_array[-16:-8]
         self.CRC = frame_array[-8:]
 

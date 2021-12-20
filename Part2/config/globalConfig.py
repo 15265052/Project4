@@ -198,14 +198,14 @@ bins_per_byte = 8
 samples_per_bin = 6
 frame_num = 75
 frame_num_2 = 200
-bytes_per_frame = 10
+bytes_per_frame = 20
 ip_bit_length = 4 * 8
 payload_length = bytes_per_frame * bins_per_byte * samples_per_bin
 CRC_length = 8 * samples_per_bin
 type_length = 4 * samples_per_bin
 ip_length = samples_per_bin * ip_bit_length
 port_length = 16 * samples_per_bin
-frame_length = preamble_length + type_length + 2 * ip_length + 2 * port_length + payload_length + CRC_length + 8 * samples_per_bin
+frame_length = preamble_length + type_length + payload_length + CRC_length + 8 * samples_per_bin
 frame_length_in_bit = int((frame_length - preamble_length) / samples_per_bin)
 
 node1_ip = "10.20.194.21"
