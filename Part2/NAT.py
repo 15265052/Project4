@@ -1,5 +1,6 @@
 # NAT to translate Athernet data packet and send it through socket
 import socket
+import time
 
 import numpy as np
 
@@ -55,31 +56,27 @@ def callback(indata, outdata, frames, time, status):
         ACK_pointer += 1
 
 
-def gen_data(pre_data, src_address, dest_address):
-    """translate payload into Athernet packet"""
-    athernet_frames = []
-    for i in range(frame_num):
-        data = pre_data[0][i * bytes_per_frame:(i + 1) * bytes_per_frame]
-        frame = PhyFrame()
-        frame.set_phy_load(MACFrame())
-        frame.set_MAC_load(UDPFrame())
-        frame.set_type(data_frame)
-        frame.set_src_ip(translate_ip_to_bits(src_address[0]))
-        frame.set_src_port(translate_port_to_bits(src_address[1]))
-        frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
-        frame.set_dest_port(translate_port_to_bits(dest_address[1]))
-        frame.set_num(i)
-        byte_bit_str_buffer = ""
-        for j in range(bytes_per_frame):
-            if j < len(data):
-                bi = bin(data[j])[2:]
-                byte_bit_str_buffer += (8 - len(bi)) * "0" + bi
-            else:
-                byte_bit_str_buffer += "00000000"
-        frame.set_load(byte_bit_str_buffer)
-        frame.set_CRC()
-        athernet_frames.append(frame)
-    return athernet_frames
+def gen_data(str_send, src_address, dest_address):
+    frame = PhyFrame()
+    frame.set_phy_load(MACFrame())
+    frame.set_MAC_load(UDPFrame())
+    frame.set_type(data_frame)
+    frame.set_src_ip(translate_ip_to_bits(src_address[0]))
+    frame.set_src_port(translate_port_to_bits(src_address[1]))
+    frame.set_dest_ip(translate_ip_to_bits(dest_address[0]))
+    frame.set_dest_port(translate_port_to_bits(dest_address[1]))
+    frame.set_num(len(str_send)*8)
+    byte_bit_str_buffer = ""
+    for j in range(bytes_per_frame):
+        if j < len(str_send):
+            byte_bit_str_buffer += '{0:08b}'.format(ord(str_send[j]), 'b')
+        else:
+            byte_bit_str_buffer += "00000000"
+    # byte_bit_str_buffer = "0b" + byte_bit_str_buffer
+    print(bit_load_to_str(byte_bit_str_buffer))
+    frame.set_load(byte_bit_str_buffer)
+    frame.set_CRC()
+    return frame
 
 
 def send_athernet_data():
@@ -90,173 +87,6 @@ def send_athernet_data():
     while global_input_index < len(TxFrame):
         global_status = "send data"
     global_status = ""
-
-
-def decode_ACK_bits(ACK_buffer):
-    # first to convert all samples to bits
-    str_decoded = ""
-    pointer = 0
-    ACK_length_in_bit = 20
-    for i in range(ACK_length_in_bit):
-        decode_buffer = ACK_buffer[pointer: pointer + samples_per_bin]
-        if np.sum(decode_buffer * signal0) > 0:
-            str_decoded += '0'
-        else:
-            str_decoded += '1'
-        pointer += samples_per_bin
-    return str_decoded
-
-
-def check_ACK(range1, range2, data):
-    """
-    check if ACK received from range1 to range2
-    retransmit frame if time out
-    """
-    global global_buffer
-    global TxFrame
-    global global_pointer
-    while global_pointer < len(global_buffer):
-        pointer_ACK = detect_preamble(global_buffer[global_pointer:global_pointer + 1024])
-        if not pointer_ACK == 'error':
-            global_pointer += pointer_ACK
-            ACK_frame_array = global_buffer[global_pointer: global_pointer + 20 * samples_per_bin]
-            ACK_frame = PhyFrame()
-            ACK_frame.from_array(decode_ACK_bits(ACK_frame_array))
-            if ACK_frame.check():
-                if not ACK_confirmed[ACK_frame.get_decimal_num()]:
-                    print("ACK ", ACK_frame.get_decimal_num(), " received!")
-                    ACK_confirmed[ACK_frame.get_decimal_num()] = True
-                ACK_confirmed[ACK_frame.get_decimal_num()] = True
-            global_pointer += 48
-        global_pointer += 1024
-    global_pointer = len(global_buffer) >> 2
-    res = True
-    for i in range(range1, range2):
-        if not ACK_confirmed[i]:
-            res = False
-            if time.time() - send_time[i] > retransmit_time and send_time[i] != 0:
-                frame_retransmit[i] += 1
-                if frame_retransmit[i] >= max_retransmit:
-                    print("link error! exit")
-                    exit(-1)
-                else:
-                    print("ACK ", i, " time out, time used: ", time.time() - send_time[i], ", retransmit")
-                    # retransmit
-                    TxFrame = data[i].get_modulated_frame()[:]
-                    send_athernet_data()
-                    send_time[i] = time.time()
-                    TxFrame = []
-                    res = False
-    return res
-
-
-def send_ACK(n_frame):
-    global global_status
-    global ACK_buffer
-    global ACK_predefined
-    print(n_frame)
-    ACK_buffer.append(ACK_predefined[n_frame])
-    global_status = "sending ACK"
-
-
-def athernet_to_internet():
-    """ translate athernet packet to internet packet """
-    global global_buffer
-    global global_pointer
-    global detected_frames
-    global is_noisy
-    src_ip = None
-    src_port = None
-    dest_ip = None
-    dest_port = None
-    stream = set_stream()
-    stream.start()
-    pointer = global_pointer
-    UDP_payload = [None] * frame_num
-    # First to receive data from athernet
-    print("start to receive athernet packet")
-    while detected_frames < frame_num or is_noisy:
-        # print(detected_frames)
-        if pointer + block_size > len(global_buffer):
-            continue
-        block_buffer = global_buffer[pointer: pointer + block_size]
-        pointer_frame = detect_preamble(block_buffer)
-        if not pointer_frame == "error":
-            pointer += pointer_frame
-            # detect a frame, first to check its correctness
-            if pointer + frame_length - preamble_length > len(global_buffer):
-                time.sleep(0.1)
-            frame_detected = global_buffer[pointer: pointer + frame_length - preamble_length]
-            frame_in_bits = decode_to_bits(frame_detected)
-            if check_CRC8(frame_in_bits):
-                phy_frame = PhyFrame()
-                phy_frame.from_array(frame_in_bits)
-                n_frame = phy_frame.get_decimal_num()
-                print("sending ACK: ", n_frame)
-                send_ACK(n_frame)
-                if not frame_confirmed[n_frame]:
-                    frame_confirmed[n_frame] = True
-                    detected_frames += 1
-                # CRC correct, starting decode ip and port
-                if src_ip is None:
-                    src_ip = decode_ip(phy_frame.get_src_ip())
-                if src_port is None:
-                    src_port = decode_port(phy_frame.get_src_port())
-                if dest_ip is None:
-                    dest_ip = decode_ip(phy_frame.get_dest_ip())
-                if dest_port is None:
-                    dest_port = decode_port((phy_frame.get_dest_port()))
-                UDP_payload[n_frame] = str_to_byte(phy_frame.get_load())
-            else:
-                print("CRC broken!")
-            pointer += frame_length - preamble_length
-            continue
-        pointer += block_size
-
-    print("Athernet receiving finished!")
-
-    # sending internet data
-    sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    for data in UDP_payload:
-        byte_str = b''
-        for byte in data:
-            byte_str += byte
-        sck.sendto(byte_str, (node1_ip, node1_port))
-    sck.close()
-    print("Finish sending")
-
-
-def internet_to_athernet():
-    # first to receive data from node1
-    all_data = []
-    print("start receiving internet data")
-    sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    address = (NAT_internet_ip, NAT_port)
-    sck.bind(address)
-    data, node1_address = sck.recvfrom(750)
-    all_data.append(data)
-    print("data: ", data)
-    sck.close()
-    print("receiving from node1 finished")
-
-    stream = set_stream()
-    stream.start()
-    global TxFrame
-    # then send data to node3
-    frames = gen_data(all_data, (NAT_athernet_ip, NAT_port), (node3_ip, node3_port))
-    i = 0
-    for frame in frames:
-        TxFrame = frame.get_modulated_frame()[:]
-        send_athernet_data()
-        TxFrame = []
-        send_time[i] = time.time()
-        print("send ", frame.get_decimal_num(), "frame")
-        i += 1
-        if i % 49 and i >= 49:
-            check_ACK(0, i, frames)
-    while not check_ACK(0, frame_num, frames):
-        pass
-    print("sending data to node3 finished")
 
 
 def receive_data():
@@ -278,18 +108,18 @@ def receive_data():
                 time.sleep(0.1)
             frame_detected = global_buffer[pointer: pointer + frame_length - preamble_length]
             frame_in_bits = decode_to_bits(frame_detected)
-            if check_CRC8(frame_in_bits):
-                # CRC correct, starting decode ip and port
-                phy_frame = PhyFrame()
-                phy_frame.from_array(frame_in_bits)
-                pay_len = phy_frame.get_decimal_num()
-                print("payload_length:", pay_len)
-                byte_str = str(phy_frame.get_load())[2:2 + pay_len]
-            else:
-                print("CRC broken!")
+            # CRC correct, starting decode ip and port
+            phy_frame = PhyFrame()
+            phy_frame.from_array(frame_in_bits)
+            pay_len = phy_frame.get_decimal_num()
+            print("payload_length:", pay_len)
+            byte_str = str(phy_frame.get_load())[0:pay_len]
             pointer += frame_length - preamble_length
             break
         pointer += block_size
+    global_pointer = pointer
+    byte_str = bit_load_to_str(byte_str)
+    print(global_pointer)
     print("receiving data finished... showing contents...", byte_str)
     return byte_str
 
@@ -302,8 +132,9 @@ def send_data(str_send):
     TxFrame = []
     print("Node3 sending data finished")
 
-
+stream = set_stream()
+stream.start()
 while True:
     input("enter to receive")
-    receive_data()
-    send_data("received")
+    re = receive_data()
+    send_data(re)
