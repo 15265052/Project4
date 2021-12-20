@@ -164,5 +164,4 @@ while True:
     elif command[0] == "CONNECT":
         ftp = ftplib.FTP(host, username, password)
         break
-
 stream.stop()
