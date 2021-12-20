@@ -164,4 +164,15 @@ while True:
     elif command[0] == "CONNECT":
         ftp = ftplib.FTP(host, username, password)
         break
+
+while True:
+    input("enter to receive")
+    command = receive_data().split(" ")
+
+    if len(command[0]) == 0:
+        continue
+
+    elif command[0] == "PWD":
+        send_data(ftp.pwd())
+        continue
 stream.stop()

@@ -219,6 +219,8 @@ if __name__ == "__main__":
             send_data("PWD ")
             print(receive_data())
 
+        elif commands[0] == "CONNECT":
+            send_data("CONNECT ")
         else:
             break
     stream.stop()
