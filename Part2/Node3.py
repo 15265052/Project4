@@ -187,12 +187,11 @@ def receive_data():
             # CRC correct, starting decode ip and port
             phy_frame = PhyFrame()
             phy_frame.from_array(frame_in_bits)
-            if phy_frame.check():
-                pay_len = phy_frame.get_decimal_num()
-                print("payload_length:", pay_len)
-                byte_str = str(phy_frame.get_load())[0:pay_len]
-                pointer += frame_length - preamble_length
-                break
+            pay_len = phy_frame.get_decimal_num()
+            print("payload_length:", pay_len)
+            byte_str = str(phy_frame.get_load())[0:pay_len]
+            pointer += frame_length - preamble_length
+            break
         pointer += block_size
     global_pointer = pointer
     byte_str = bit_load_to_str(byte_str)
@@ -208,11 +207,17 @@ if __name__ == "__main__":
         commands = [x for x in str_in.split(' ')]
 
         if commands[0] == "USER":
-            send_data("USER ")
+            if len(commands[1]) > 0:
+                send_data("USER " + commands[1])
+            else:
+                send_data("USER ")
             print(receive_data())
 
         elif commands[0] == "PASS":
-            send_data("PASS ")
+            if len(commands[1]) > 0:
+                send_data("PASS " + commands[1])
+            else:
+                send_data("PASS ")
             print(receive_data())
 
         elif commands[0] == "PWD":
@@ -222,13 +227,24 @@ if __name__ == "__main__":
         elif commands[0] == "CONNECT":
             send_data("CONNECT ")
 
+        elif commands[0] == "CWD":
+            send_data("CWD " + commands[1])
+
+        elif commands[0] == "PASV":
+            if len(commands[1]) > 0:
+                send_data("PASV " + commands[1])
+            else:
+                send_data("PASV ")
+            print(receive_data())
         elif commands[0] == "LIST":
             send_data("LIST ")
+            all_ret = ''
             ret = receive_data()
             while ret != "end list" or len(ret) == 0:
-                print(ret)
                 ret = receive_data()
-            continue
+                if not ret == "end list":
+                    all_ret += ret
+            print(all_ret)
         else:
             break
     stream.stop()

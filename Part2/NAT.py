@@ -180,6 +180,18 @@ while True:
         send_data(ftp.pwd())
         continue
 
+    elif command[0] == "CWD":
+        if len(command[0]) > 0:
+            ftp.cwd(command[1])
+
+    elif command[0] == "PASV":
+        if len(command[1]) == 0 or command[1] == "FALSE":
+            ftp.set_pasv(False)
+            send_data("set pasv to false")
+        else:
+            ftp.set_pasv(True)
+            send_data("set pasv to true")
+
     elif command[0] == "LIST":
         files = []
         ftp.dir(files.append)

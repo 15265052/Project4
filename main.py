@@ -1,14 +1,14 @@
 
 import ftplib
 
-with ftplib.FTP('ftp.sjtu.edu.cn') as ftp:
+with ftplib.FTP('ftp.ncnu.edu.tw') as ftp:
 
     try:
         ftp.login()
 
         files = []
-        ftp.dir(files.append)
-        print()
+        ftp.dir()
+
 
     except ftplib.all_errors as e:
         print('FTP error:', e)
